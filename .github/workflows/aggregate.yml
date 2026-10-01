@@ -6,7 +6,7 @@ on:
 permissions:
   contents: write
 concurrency:
-  group: recorder
+  group: aggregate
   cancel-in-progress: false
 jobs:
   aggregate:
