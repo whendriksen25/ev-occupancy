@@ -1,0 +1,11 @@
+{
+ "built_utc": "2026-10-01T06:10:46Z",
+ "window_days": 2,
+ "first_day": "2026-09-30",
+ "last_day": "2026-10-01",
+ "samples_replayed": 6,
+ "locations_seen": 75670,
+ "locations_published": 0,
+ "avg_occupancy_pct": null,
+ "stale_flagged": 0
+}
