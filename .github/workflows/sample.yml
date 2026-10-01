@@ -1,31 +1,55 @@
 name: Sample live status
+# GitHub's free scheduler fires this cron only every 4-7 h for this repo, so one
+# run now keeps sampling every 15 minutes for ~5h40 and then hands over to the
+# next run (self-dispatch). The cron stays as a backup that restarts the chain.
 on:
   schedule:
     - cron: '*/15 * * * *'
   workflow_dispatch: {}
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: recorder
   cancel-in-progress: false
 jobs:
   sample:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 355
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v5
         with: { python-version: '3.12' }
-      - name: Sample
-        run: python sample.py
-      - name: Commit
+      - name: Sample every 15 min for ~5h40
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           git config user.name  "occupancy-bot"
           git config user.email "actions@users.noreply.github.com"
-          git add data state
-          git commit -m "sample $(date -u +'%F %H:%M')" || { echo "nothing to commit"; exit 0; }
-          for i in 1 2 3 4 5; do
-            git pull --rebase --autostash && git push && exit 0
-            sleep $((i * 7))
+          end=$(( $(date +%s) + 340*60 ))
+          n=0
+          while :; do
+            git pull --rebase --autostash -q || true
+            if python sample.py; then
+              git add data state
+              if git commit -q -m "sample $(date -u +'%F %H:%M')"; then
+                for i in 1 2 3 4 5; do
+                  git pull --rebase --autostash -q && git push -q && break
+                  sleep $((i * 7))
+                done
+              fi
+              n=$((n+1))
+            else
+              echo "sample failed at $(date -u +%H:%M), will retry next slot"
+            fi
+            now=$(date +%s)
+            next=$(( (now / 900 + 1) * 900 + 20 ))   # next quarter hour + 20 s
+            if [ $next -ge $end ]; then break; fi
+            sleep $(( next - now ))
           done
-          echo "push failed after retries"; exit 1
+          echo "samples this run: $n"
+      - name: Hand over to the next run
+        if: success() || failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run sample.yml --ref main -R "$GITHUB_REPOSITORY" || echo "dispatch failed; cron will restart"
