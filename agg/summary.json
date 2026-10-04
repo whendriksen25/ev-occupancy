@@ -1,10 +1,10 @@
 {
- "built_utc": "2026-10-03T05:29:20Z",
- "window_days": 4,
+ "built_utc": "2026-10-04T06:03:47Z",
+ "window_days": 5,
  "first_day": "2026-09-30",
- "last_day": "2026-10-03",
- "samples_replayed": 167,
- "locations_seen": 75814,
+ "last_day": "2026-10-04",
+ "samples_replayed": 266,
+ "locations_seen": 75821,
  "locations_published": 0,
  "avg_occupancy_pct": null,
  "stale_flagged": 0
